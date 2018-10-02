@@ -12,6 +12,6 @@ mdev -s
 
 while [ 1 ]; do
   echo "Hello world"
-  exec /bin/sh
+  /bin/sh
 done
 
