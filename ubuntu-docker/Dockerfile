@@ -14,6 +14,15 @@ RUN apt-get install -y net-tools gdb
 RUN apt-get install -y iputils-ping
 RUN apt-get install -y libncurses-dev
 RUN apt-get install -y cpio
+RUN apt-get install -y codespell
+
+ENV KERNEL_GIT=https://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git
+ENV BUSYBOX_GIT=https://git.busybox.net/busybox
+
+RUN cd /root && \
+	git clone ${KERNEL_GIT} kernel && \
+	git clone ${BUSYBOX_GIT} busybox
 
 
+WORKDIR /root
 

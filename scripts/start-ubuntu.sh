@@ -1,6 +1,9 @@
 #!/bin/bash
 
-PWD=`pwd`
+SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR=$(cd $SCRIPT_DIR && pwd -P)
 
-docker run -it --rm --name ubuntu-dev -v $PWD/../ext-sources:/root/sources ubuntu-dev /bin/bash
+echo $SCRIPT_DIR
+
+docker run -it -d --name ubuntu-dev -v $SCRIPT_DIR/../shares:/root/shares ubuntu-dev /bin/bash
 

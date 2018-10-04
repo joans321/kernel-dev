@@ -1,10 +1,11 @@
 #!/bin/bash
 
-THIS_DIR=`pwd`
-TOP_DIR=$THIS_DIR/..
-KERNEL_DIR=$TOP_DIR/ext-sources/kernel
-kernel_img=$KERNEL_DIR/arch/x86_64/boot/bzImage
-rootfs_img="$TOP_DIR/ext-sources/rootfs.cpio.gz"
+SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR=$(cd $SCRIPT_DIR && pwd -P)
+
+TOP_DIR=$SCRIPT_DIR/..
+kernel_img=$TOP_DIR/shares/output/bzImage
+rootfs_img="$TOP_DIR/shares/output/rootfs.cpio.gz"
 
 qemu_cmd=qemu-system-x86_64
 nodisplay=false
