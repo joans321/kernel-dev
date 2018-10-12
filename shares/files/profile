@@ -1,0 +1,5 @@
+# /etc/profile
+
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PS1="[\u@Linux \W]\$ "
+

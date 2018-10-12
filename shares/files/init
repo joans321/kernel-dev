@@ -1,0 +1,28 @@
+#!/bin/sh
+
+mkdir -p /proc
+mkdir -p /tmp
+mkdir -p /sys
+
+mount -t proc proc /proc
+mount -t tmpfs tmpfs /tmp
+mount -t sysfs sysfs /sys
+
+mdev -s
+
+# Config QeMU User Networking (SLIRP)
+#    https://wiki.qemu.org/Documentation/Networking
+#    Guest IP   : 10.0.2.15
+#    Gateway IP : 10.0.2.2
+#    DNS IP     : 10.0.2.3
+#    SMB IP     : 10.0.2.4
+ifconfig eth0 10.0.2.15
+
+# Start SSH Server
+/bin/start-dropbear.sh
+
+while [ 1 ]; do
+  echo "Hello world"
+  /bin/sh
+done
+

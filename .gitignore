@@ -1,3 +1,20 @@
-/shares
+*.o
+*.ko
+*.mod.c
+*.cmd
+*.mod
+*.symvers
+*.order
+
+/shares/busybox
+/shares/dhcpcd
+/shares/dropbear
+/shares/musl
+/shares/output
+/shares/staging
+/shares/kernel
+/shares/zlib
+
+
 
 

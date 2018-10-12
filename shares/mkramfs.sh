@@ -16,7 +16,16 @@ if [ ! -d $rootfs_dir ]; then
 fi
 
 
-cp $SCRIPT_DIR/init $rootfs_dir/init
+mkdir -p $rootfs_dir/bin/
+mkdir -p $rootfs_dir/etc/
+mkdir -p $rootfs_dir/etc/dropbear
+
+cp $SCRIPT_DIR/files/init $rootfs_dir/
+cp $SCRIPT_DIR/files/start-dropbear.sh $rootfs_dir/bin
+cp $SCRIPT_DIR/files/passwd $rootfs_dir/etc/
+cp $SCRIPT_DIR/files/profile $rootfs_dir/etc/
+cp $SCRIPT_DIR/files/dropbear_rsa_host_key $rootfs_dir/etc/dropbear/
+cp $SCRIPT_DIR/files/dropbear_dss_host_key $rootfs_dir/etc/dropbear/
 
 cd $rootfs_dir
 

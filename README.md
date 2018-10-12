@@ -4,7 +4,9 @@ This topic is about how to develop the Linux Kernel in MacOS.
 
 * Create docker image for building and debug
 * Build kernel in Docker
+* Build busybox and create rootfs
 * Debug kernel with Qemu and gdb
+* Build dropbear for ssh
 
 **Note: if you are linux user, you don't need docker**
 
@@ -13,7 +15,11 @@ First of all, you need to clone this project and export shell environment:
 ~~~sh
 $ git clone https://github.com/joans321/kernel-dev
 $ cd kernel-dev
+### this project top dir
 $ export KDEV_TOP=`pwd`
+
+### rootfs dir in docker container
+$ export SYSROOT=/root/shares/output/rootfs
 ~~~
 
 
@@ -68,7 +74,7 @@ $ docker build . -t ubuntu-dev
 
 
 
-# Building
+# Building in docker
 
 * Run docker image with
 
@@ -95,21 +101,27 @@ $ make x86_64_defconfig
 
 $ make menuconfig 
 ###   Processor type and features --->
-###     Build a relocatable kernel [Disable]
+###      Build a relocatable kernel [Disable]
 ###   Kernel hacking --->
-###     Kernel debugging [Enable]
-###     Compile-time checks and copiler options --->
-###       Compile the kernel with debug info [Enable]
-###       Provide GDB scripts for kernel debuggin [Enable]
+###      Kernel debugging [Enable]
+###      Compile-time checks and copiler options --->
+###         Compile the kernel with debug info [Enable]
+###         Provide GDB scripts for kernel debuggin [Enable]
+###   Device Drivers --->
+###      Character devices --->
+###          Legacy (BSD) PTY Support [Enable]
 ###     
 ### or edit .config file
 ###   CONFIG_DEBUG_INFO=y
 ###   CONFIG_GDB_SCRIPTS=y
 ###   CONFIG_DEBUG_KERNEL=y
+###   CONFIG_LEGACY_PTYS=y
+###   CONFIG_LEGACY_PTY_COUNT=256
 ###   # CONFIG_RELOCATABLE is not set
 ###   # CONFIG_DYNAMIC_MEMORY_LAYOUT is not set
 ###   # CONFIG_RANDOMIZE_MEMORY is not set
 ###   # CONFIG_RANDOMIZE_MEMORY_PHYSICAL_PADDING is not set
+
 
 $ make -j8
 
@@ -129,11 +141,11 @@ $ make menuconfig
 $ make -j4
 
 ### install busybox to special directory
-$ mkdir -p /root/shares/output/rootfs
-$ make CONFIG_PREFIX=/root/shares/output/rootfs install
+$ mkdir -p $SYSROOT
+$ make CONFIG_PREFIX=$SYSROOT install
 
 ### create rootfs
-$ /root/shares/mkramfs.sh /root/shares/output/rootfs
+$ /root/shares/mkramfs.sh $SYSROOT
 ~~~
 
 
@@ -145,7 +157,7 @@ Qemu supports initramfs, initrd ramdisk and hda root image. The only problem is 
 Make rootfs command with newc format :
 
 ~~~sh
-$ cd <rootfs directory>
+$ cd $SYSROOT
 $ find . | cpio -o -H newc | gzip > ../rootfs.cpio.gz
 
 # Check rootfs.cpio.gz file
@@ -156,7 +168,7 @@ $ zcat rootfs.cpio.gz | cpio -i -d -H newc --no-absolute-filename
 Here we run the [mkramfs.sh](shares/mkramfs.sh) script in docker container to create rootfs.cpio.gz after busybox is built.
 
 ~~~sh
-$ /root/shares/mkramfs.sh /root/shares/output/rootfs
+$ /root/shares/mkramfs.sh $SYSROOT
 ~~~
 
 
@@ -189,6 +201,86 @@ Thread 1 hit Breakpoint 1, start_kernel () at init/main.c:532
 532	{
 (gdb) 
 ~~~
+
+
+
+# SSH Support
+
+* ~~build `musl` libc library in docker container~~
+
+~~~sh
+$ git clone git://git.musl-libc.org/musl
+$ cd musl
+$ ./configure --prefix=$SYSROOT
+$ make 
+$ make install
+~~~
+
+* ~~build zlib library in docker container~~
+
+~~~sh
+$ git clone https://github.com/madler/zlib
+$ cd zlib
+$ ./configure --prefix=$SYSROOT
+$ make && make install
+~~~
+
+* build Dropbear in docker container
+
+~~~sh
+## download dropbear source code
+$ git clone https://github.com/mkj/dropbear
+$ cd dropbear
+
+## download netbsd_getpwnam.c and update patch
+$ wget netbsd_getpwnam.c
+$ git diff
+diff --git a/Makefile.in b/Makefile.in
+index e7d52a2..0575306 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -51,7 +51,8 @@ CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
+ CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
+            common-channel.o common-chansession.o termcodes.o loginrec.o \
+            tcp-accept.o listener.o process-packet.o dh_groups.o \
+-           common-runopts.o circbuffer.o curve25519-donna.o list.o netio.o
++           common-runopts.o circbuffer.o curve25519-donna.o list.o netio.o \
++           netbsd_getpwnam.o
+ 
+ KEYOBJS=dropbearkey.o
+
+
+## build here
+$ autoconf && autoheader
+$ ./configure --enable-static --prefix=$SYSROOT
+$ make PROGRAMS="dropbear dropbearkey scp" SCPPROGRESS=1
+$ make PROGRAMS="dropbear dropbearkey scp" install 
+~~~
+
+* make rootfs
+
+~~~sh
+$ /root/shares/mkramfs.sh /root/shares/output/rootfs
+~~~
+
+* qemu support network, view post [nic parameter](https://www.qemu.org/2018/05/31/nic-parameter/) and [Qemu Networking](https://wiki.qemu.org/Documentation/Networking)
+
+
+~~~sh
+# enable network interface and forward host port to guest ip:port
+$ qemu-system-x86_64 <other args> -nic user,hostfwd=tcp::2222-10.0.2.15:22
+~~~
+
+* login to qemu guest
+
+~~~sh
+# root with no passwd
+$ ssh -p2222 root@localhost 
+
+# scp something to guest
+$ scp -P2222 xxx.ko root@localhost:/
+~~~
+
 
 
 
